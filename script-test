@@ -1,0 +1,43 @@
+First you need to copy all the hostname in file "ip.txt"
+
+#! /bin/bash 
+
+echo "Enter command that you want to execute on all the servers"
+read $commandname
+
+for i in `cat ip.txt` ;do sshpass -p 'test123' ssh -t -q -o ConnectTimeout=5 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no nilesh.patil@$i "$commnadname" ;echo "$1" ;done >> out.txt
+
+Python script :- 
+
+======================================
+python :- 
+
+#!/usr/bin/python
+
+import os
+import time
+import subprocess
+import getpass
+
+print "=======Help your self======="
+
+ip=raw_input('hostname :')
+usr=raw_input('User Name :')
+pwd=getpass.getpass('Pass :')
+command=raw_input('command :')
+
+print "\n\n====Kindly Wait=====\n\n"
+
+def run_cmd(hostname,usr,pwd,command):
+    
+    cmd="sshpass -p "+pwd+" ssh -o StrictHostKeyChecking=no "+usr+"@"+hostname+" "+command+"
+    #print cmd
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+    (output, err) = p.communicate()
+    #print output
+    if output:
+       print "-----------Command run sucessfully on node-----------\n"
+    else:
+       print "---------Command failed to run---------\n"
+
+run_cmd(hostname,usr,pwd,command)
