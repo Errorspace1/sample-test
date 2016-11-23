@@ -1,0 +1,104 @@
+FROM centos:centos6
+MAINTAINER Nilesh.patil "znileshpatil@gmail.com"
+ 
+#Helpful utils, but only sudo is required
+#RUN yum -y install tar
+#RUN yum -y install vim
+#RUN yum -y install nc
+RUN yum -y install sudo
+ 
+######## JDK7
+
+#Note that ADD uncompresses this tarball automatically
+
+ADD jdk-7u72-linux-x64.tar.gz /opt
+WORKDIR /opt/jdk1.7.0_72
+RUN alternatives --install /usr/bin/java java /opt/jdk1.7.0_72/bin/java 1
+RUN alternatives --install /usr/bin/jar jar /opt/jdk1.7.0_72/bin/jar 1
+RUN alternatives --install /usr/bin/javac javac /opt/jdk1.7.0_72/bin/javac 1
+RUN echo "JAVA_HOME=/opt/jdk1.7.0_72" >> /etc/environment
+ 
+######## TOMCAT
+ 
+#Note that ADD uncompresses this tarball automatically
+
+ADD apache-tomcat-7.0.57.tar.gz /usr/share
+WORKDIR /usr/share/
+RUN mv  apache-tomcat-7.0.57 tomcat7
+RUN echo "JAVA_HOME=/opt/jdk1.7.0_72/" >> /etc/default/tomcat7
+RUN groupadd tomcat
+RUN useradd -s /bin/bash -g tomcat tomcat
+RUN chown -Rf tomcat.tomcat /usr/share/tomcat7
+EXPOSE 8080
+
+
+# Install yum dependencies
+RUN yum -y update && \
+yum groupinstall -y development && \
+yum install -y \
+bzip2-devel \
+git \
+hostname \
+openssl \
+openssl-devel \
+sqlite-devel \
+sudo \
+tar \
+wget \
+zlib-dev
+
+# Install python2.7 
+
+RUN cd /tmp && \
+wget https://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz && \
+tar xvfz Python-2.7.8.tgz && \
+cd Python-2.7.8 && \
+./configure --prefix=/usr/local && \
+make && \
+make altinstall
+
+ # Install setuptools + pip
+
+RUN cd /tmp && \
+wget --no-check-certificate https://pypi.python.org/packages/source/s/setuptools/setuptools-1.4.2.tar.gz && \
+tar -xvf setuptools-1.4.2.tar.gz && \
+cd setuptools-1.4.2 && \
+python2.7 setup.py install && \
+curl https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py | python2.7 - && \
+pip install virtualenv
+
+
+# mongoDB installation 
+
+RUN  yum install -y mongodb-server && yum clean all
+
+RUN  mkdir -p /var/lib/mongodb && \
+     touch /var/lib/mongodb/.keep && \
+     chown -R mongodb:mongodb /var/lib/mongodb
+
+ADD mongodb.conf /etc/mongodb.conf
+
+VOLUME [ "/var/lib/mongodb" ]
+
+EXPOSE 27017
+
+USER mongodb
+WORKDIR /var/lib/mongodb
+
+ENTRYPOINT ["/usr/bin/mongod", "--config", "/etc/mongodb.conf"]
+
+======================================================
+
+run below command to build the image :- 
+
+docker build --rm=true -t centos6/sample1 .
+
+to run catalina :- 
+
+docker run  --rm=true -t -i -p 7080:8080 --name tomcat7 centos6/sample  /usr/bin/sudo -u tomcat /usr/share/tomcat7/bin/catalina.sh run   for tomcat-
+
+
+
+
+
+
